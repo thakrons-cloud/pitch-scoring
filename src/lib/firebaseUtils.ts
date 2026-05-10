@@ -110,7 +110,7 @@ export const addTeam = async (name: string, currentTeamCount: number) => {
 export const resetEvent = async () => {
   const batch = writeBatch(db);
   
-  // Reset all teams
+  // 1. Reset all teams scores
   const teamsSnap = await getDocs(collection(db, "teams"));
   teamsSnap.forEach((teamDoc) => {
     batch.update(teamDoc.ref, {
@@ -120,7 +120,19 @@ export const resetEvent = async () => {
     });
   });
 
-  // Reset event state to the first team
+  // 2. Delete all tickets
+  const ticketsSnap = await getDocs(collection(db, "tickets"));
+  ticketsSnap.forEach((ticketDoc) => {
+    batch.delete(ticketDoc.ref);
+  });
+
+  // 3. Delete all votes logs
+  const votesSnap = await getDocs(collection(db, "votes"));
+  votesSnap.forEach((voteDoc) => {
+    batch.delete(voteDoc.ref);
+  });
+
+  // 4. Reset event state
   const eventRef = doc(db, "eventState", "current");
   batch.update(eventRef, {
     votingOpen: false,
