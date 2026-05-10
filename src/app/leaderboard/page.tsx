@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Trophy, Users, Star } from "lucide-react";
+import { Trophy, Users, TrendingUp, Medal } from "lucide-react";
 import { useTeams } from "@/hooks/useFirebaseData";
 
 export default function LeaderboardPage() {

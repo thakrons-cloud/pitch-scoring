@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, CheckCircle, Lock } from "lucide-react";
+import { CheckCircle, Lock } from "lucide-react";
 import { useStore } from "@/store/useStore";
 import { useEventState, useTeams } from "@/hooks/useFirebaseData";
 import { submitVote, validateTicket } from "@/lib/firebaseUtils";
@@ -63,8 +63,9 @@ export default function VotePage() {
       if (isValid) {
         setTicketCode(ticketInput.trim().toUpperCase());
       }
-    } catch (err: any) {
-      setTicketError(err.message || "Invalid ticket code");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invalid ticket code";
+      setTicketError(message);
     } finally {
       setIsValidating(false);
     }

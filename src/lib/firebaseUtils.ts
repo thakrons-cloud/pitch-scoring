@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc, increment, serverTimestamp, getDocs, runTransaction, writeBatch } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, runTransaction, Timestamp } from "firebase/firestore";
 
 export interface EventState {
   activeTeamId: string;
@@ -20,7 +20,7 @@ export interface Ticket {
   code: string;
   used: boolean;
   usedBySessionId: string | null;
-  createdAt: any;
+  createdAt: Timestamp;
 }
 
 // Ensure the basic structure exists in Firestore
@@ -197,7 +197,8 @@ export const validateTicket = async (code: string, sessionId: string): Promise<b
     });
     
     return result;
-  } catch (error: any) {
-    throw new Error(error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error claiming ticket";
+    throw new Error(message);
   }
 };

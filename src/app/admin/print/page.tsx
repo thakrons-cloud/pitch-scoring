@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTickets } from "@/hooks/useFirebaseData";
 import { Printer, ChevronLeft } from "lucide-react";
 import Link from "next/link";
