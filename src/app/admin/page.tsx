@@ -23,8 +23,10 @@ export default function AdminDashboard() {
   const [isUpdatingTeam, setIsUpdatingTeam] = useState(false);
   const [isEditingEventName, setIsEditingEventName] = useState(false);
   const [tempEventName, setTempEventName] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     setOrigin(window.location.origin);
   }, []);
   
@@ -51,11 +53,13 @@ export default function AdminDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Admin password
-    if (passwordInput === "8nv") {
+    const input = passwordInput.trim();
+    // Default admin password
+    if (input === "pitch-admin" || input === "admin123") {
       setIsAdmin(true);
     } else {
-      alert("Invalid admin password");
+      alert("Invalid admin password. Please try again.");
+      setPasswordInput("");
     }
   };
 
@@ -146,25 +150,44 @@ export default function AdminDashboard() {
     setIsEditingEventName(false);
   };
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black p-6">
-        <form onSubmit={handleLogin} className="glass-panel p-8 w-full max-w-sm flex flex-col items-center">
-          <Settings className="w-12 h-12 text-blue-500 mb-6" />
-          <h1 className="text-2xl font-bold text-white mb-6">Admin Login</h1>
-          <input
-            type="password"
-            value={passwordInput}
-            onChange={(e) => setPasswordInput(e.target.value)}
-            placeholder="Enter Admin Password"
-            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 mb-4 focus:outline-none focus:border-blue-500 transition-colors"
-          />
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-colors"
-          >
-            Access Dashboard
-          </button>
+      <div className="min-h-screen flex items-center justify-center bg-black p-6 relative overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <form onSubmit={handleLogin} className="glass-panel p-10 w-full max-w-sm flex flex-col items-center relative z-10">
+          <div className="w-16 h-16 bg-blue-900/30 rounded-2xl flex items-center justify-center mb-6">
+            <Settings className="w-8 h-8 text-blue-400" />
+          </div>
+          <h1 className="text-3xl font-black text-white mb-2">Admin Panel</h1>
+          <p className="text-neutral-500 text-sm mb-8 text-center">Authorized access only</p>
+          
+          <div className="w-full space-y-4">
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Enter Admin Password"
+              className="w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-600 focus:outline-none focus:border-blue-500 transition-all text-center font-mono"
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-600/20"
+            >
+              Access Dashboard
+            </button>
+          </div>
         </form>
       </div>
     );
