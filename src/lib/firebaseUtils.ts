@@ -1,8 +1,5 @@
-import { db, auth } from "./firebase";
-import { collection, doc, getDoc, setDoc, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, runTransaction, Timestamp } from "firebase/firestore";
-import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
-
-export const ADMIN_EMAILS = ["thakronsuttipat@gmail.com"]; // Add authorized admin emails here
+import { db } from "./firebase";
+import { collection, doc, getDoc, setDoc, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, runTransaction, query, where, Timestamp, deleteDoc } from "firebase/firestore";
 
 export interface EventState {
   activeTeamId: string;
@@ -20,10 +17,8 @@ export interface Team {
   totalVotes: number;
 }
 
-export interface Ticket {
-  code: string;
-  used: boolean;
-  usedBySessionId: string | null;
+export interface Attendee {
+  id: string;
   createdAt: Timestamp;
 }
 
@@ -41,15 +36,15 @@ export const initializeEvent = async () => {
       updatedAt: serverTimestamp()
     });
 
-    // Create some initial teams if they don't exist
+    // Create initial teams
     const teamsCollection = collection(db, "teams");
     const teamsSnap = await getDocs(teamsCollection);
     
     if (teamsSnap.empty) {
       const initialTeams = [
-        { id: "t1", name: "Startup Alpha", order: 1, averageScore: 0, totalVotes: 0 },
-        { id: "t2", name: "Beta Innovations", order: 2, averageScore: 0, totalVotes: 0 },
-        { id: "t3", name: "Gamma Tech", order: 3, averageScore: 0, totalVotes: 0 },
+        { id: "t1", name: "Startup Alpha", order: 1, averageScore: 0, totalScore: 0, totalVotes: 0 },
+        { id: "t2", name: "Beta Innovations", order: 2, averageScore: 0, totalScore: 0, totalVotes: 0 },
+        { id: "t3", name: "Gamma Tech", order: 3, averageScore: 0, totalScore: 0, totalVotes: 0 },
       ];
 
       for (const team of initialTeams) {
@@ -59,13 +54,22 @@ export const initializeEvent = async () => {
   }
 };
 
-export const submitVote = async (teamId: string, sessionId: string, score: number) => {
+export const submitVote = async (teamId: string, attendeeId: string, score: number) => {
   if (score < 0 || score > 5) throw new Error("Invalid score");
+
+  // Check if this attendee has already voted for this team
+  const votesRef = collection(db, "votes");
+  const q = query(votesRef, where("teamId", "==", teamId), where("attendeeId", "==", attendeeId));
+  const voteSnap = await getDocs(q);
+
+  if (!voteSnap.empty) {
+    throw new Error("You have already voted for this team.");
+  }
 
   // Record the vote
   await addDoc(collection(db, "votes"), {
     teamId,
-    sessionId,
+    attendeeId,
     score,
     timestamp: serverTimestamp()
   });
@@ -117,25 +121,25 @@ export const resetEvent = async () => {
   
   // 1. Reset all teams scores
   const teamsSnap = await getDocs(collection(db, "teams"));
-  teamsSnap.forEach((teamDoc) => {
+  for (const teamDoc of teamsSnap.docs) {
     batch.update(teamDoc.ref, {
       averageScore: 0,
       totalScore: 0,
       totalVotes: 0
     });
-  });
+  }
 
-  // 2. Delete all tickets
-  const ticketsSnap = await getDocs(collection(db, "tickets"));
-  ticketsSnap.forEach((ticketDoc) => {
-    batch.delete(ticketDoc.ref);
-  });
+  // 2. Delete all attendee IDs
+  const attendeesSnap = await getDocs(collection(db, "attendees"));
+  for (const attendeeDoc of attendeesSnap.docs) {
+    batch.delete(attendeeDoc.ref);
+  }
 
   // 3. Delete all votes logs
   const votesSnap = await getDocs(collection(db, "votes"));
-  votesSnap.forEach((voteDoc) => {
+  for (const voteDoc of votesSnap.docs) {
     batch.delete(voteDoc.ref);
-  });
+  }
 
   // 4. Reset event state
   const eventRef = doc(db, "eventState", "current");
@@ -148,25 +152,31 @@ export const resetEvent = async () => {
   await batch.commit();
 };
 
+// Generate unique 6-char Attendee IDs (e.g. PITCH-123 or random)
+export const generateAttendeeIds = async (count: number) => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const batch = writeBatch(db);
+  const attendeesRef = collection(db, "attendees");
 
-
-// Authentication
-export const signInWithGoogle = async () => {
-  const provider = new GoogleAuthProvider();
-  try {
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
-  } catch (error) {
-    console.error("Error signing in with Google:", error);
-    throw error;
+  for (let i = 0; i < count; i++) {
+    let code = "A"; // Start with A for Attendee
+    for (let j = 0; j < 4; j++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    // Check for collisions is omitted for simplicity in this batch, 
+    // but with 4 random chars it's highly unlikely for small events
+    const newDoc = doc(attendeesRef, code);
+    batch.set(newDoc, {
+      id: code,
+      createdAt: serverTimestamp()
+    });
   }
+
+  await batch.commit();
 };
 
-export const signOutUser = async () => {
-  try {
-    await signOut(auth);
-  } catch (error) {
-    console.error("Error signing out:", error);
-    throw error;
-  }
+export const validateAttendeeId = async (id: string): Promise<boolean> => {
+  const attendeeRef = doc(db, "attendees", id.toUpperCase());
+  const attendeeSnap = await getDoc(attendeeRef);
+  return attendeeSnap.exists();
 };

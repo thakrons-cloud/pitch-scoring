@@ -2,39 +2,31 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface StoreState {
-  user: {
-    uid: string;
-    email: string | null;
-    displayName: string | null;
-  } | null;
-  sessionId: string | null;
-  ticketCode: string | null;
+  attendeeId: string | null;
   votedTeamIds: string[];
   lastResetTime: number | null;
-  setUser: (user: StoreState['user']) => void;
-  setSessionId: (id: string) => void;
-  setTicketCode: (code: string | null) => void;
+  isAdmin: boolean;
+  setAttendeeId: (id: string | null) => void;
   addVotedTeamId: (teamId: string) => void;
   setLastResetTime: (time: number) => void;
+  setIsAdmin: (isAdmin: boolean) => void;
   clearState: () => void;
 }
 
 export const useStore = create<StoreState>()(
   persist(
     (set) => ({
-      user: null,
-      sessionId: null,
-      ticketCode: null,
+      attendeeId: null,
       votedTeamIds: [],
       lastResetTime: null,
-      setUser: (user) => set({ user }),
-      setSessionId: (id) => set({ sessionId: id }),
-      setTicketCode: (code) => set({ ticketCode: code }),
+      isAdmin: false,
+      setAttendeeId: (id) => set({ attendeeId: id }),
       addVotedTeamId: (teamId) => set((state) => ({ 
         votedTeamIds: [...state.votedTeamIds, teamId] 
       })),
       setLastResetTime: (time) => set({ lastResetTime: time }),
-      clearState: () => set({ votedTeamIds: [] }), // Keep user and ticketCode if they are logged in
+      setIsAdmin: (isAdmin) => set({ isAdmin }),
+      clearState: () => set({ votedTeamIds: [] }), 
     }),
     {
       name: "pitch-scoring-storage",

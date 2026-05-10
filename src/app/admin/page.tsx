@@ -1,66 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, Printer } from "lucide-react";
+import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, LogOut, Ticket } from "lucide-react";
 import { motion } from "framer-motion";
-import { QrCode, Download, ExternalLink, LogOut } from "lucide-react";
+import { useEventState, useTeams, useAttendees } from "@/hooks/useFirebaseData";
+import { initializeEvent, updateEventState, addTeam, resetEvent, generateAttendeeIds } from "@/lib/firebaseUtils";
 import { useStore } from "@/store/useStore";
-import { initializeEvent, updateEventState, addTeam, resetEvent, signInWithGoogle, signOutUser, ADMIN_EMAILS } from "@/lib/firebaseUtils";
 
 export default function AdminDashboard() {
-  const { user, setUser } = useStore();
+  const { isAdmin, setIsAdmin } = useStore();
+  const [passwordInput, setPasswordInput] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
   const [isAddingTeam, setIsAddingTeam] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-  const [origin, setOrigin] = useState("");
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateCount, setGenerateCount] = useState(50);
   
   const { eventState, loading: eventLoading } = useEventState();
   const { teams, loading: teamsLoading } = useTeams();
-  
-  const isAuthenticated = user && ADMIN_EMAILS.includes(user.email || "");
+  const { attendees, loading: attendeesLoading } = useAttendees();
 
   // Handle DB init
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAdmin) {
       initializeEvent();
     }
-  }, [isAuthenticated]);
+  }, [isAdmin]);
 
   const activeTeamIndex = teams.findIndex(t => t.id === eventState?.activeTeamId);
   const activeTeam = activeTeamIndex >= 0 ? teams[activeTeamIndex] : null;
   const votingOpen = eventState?.votingOpen || false;
 
-  const handleLogin = async () => {
-    setIsValidating(true);
-    try {
-      const loggedInUser = await signInWithGoogle();
-      if (loggedInUser) {
-        if (ADMIN_EMAILS.includes(loggedInUser.email || "")) {
-          setUser({
-            uid: loggedInUser.uid,
-            email: loggedInUser.email,
-            displayName: loggedInUser.displayName
-          });
-        } else {
-          await signOutUser();
-          alert("Unauthorized: This account is not in the admin list.");
-        }
-      }
-    } catch (err) {
-      alert("Failed to sign in with Google.");
-    } finally {
-      setIsValidating(false);
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Default admin password
+    if (passwordInput === "pitch-admin" || passwordInput === "admin123") {
+      setIsAdmin(true);
+    } else {
+      alert("Invalid admin password");
     }
   };
 
-  const handleLogout = async () => {
-    await signOutUser();
-    setUser(null);
+  const handleLogout = () => {
+    setIsAdmin(false);
   };
 
   const toggleVoting = async () => {
@@ -98,7 +79,7 @@ export default function AdminDashboard() {
 
   const handleReset = async () => {
     const confirmReset = window.confirm(
-      "Are you sure you want to RESET ALL SCORES to zero? This action cannot be undone."
+      "Are you sure you want to RESET EVERYTHING? All votes, attendees, and scores will be deleted."
     );
     if (confirmReset) {
       await resetEvent();
@@ -106,36 +87,35 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (generateCount < 1 || generateCount > 500) return;
+    
+    setIsGenerating(true);
+    await generateAttendeeIds(generateCount);
+    setIsGenerating(false);
+  };
 
-
-  if (!isAuthenticated) {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black p-6">
-        <div className="glass-panel p-8 w-full max-w-sm flex flex-col items-center">
+        <form onSubmit={handleLogin} className="glass-panel p-8 w-full max-w-sm flex flex-col items-center">
           <Settings className="w-12 h-12 text-blue-500 mb-6" />
-          <h1 className="text-2xl font-bold text-white mb-2">Admin Dashboard</h1>
-          <p className="text-neutral-500 text-center mb-8">Sign in with an authorized Google account to manage the competition.</p>
-          
+          <h1 className="text-2xl font-bold text-white mb-6">Admin Login</h1>
+          <input
+            type="password"
+            value={passwordInput}
+            onChange={(e) => setPasswordInput(e.target.value)}
+            placeholder="Enter Admin Password"
+            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-neutral-500 mb-4 focus:outline-none focus:border-blue-500 transition-colors"
+          />
           <button
-            onClick={handleLogin}
-            disabled={isValidating}
-            className="w-full bg-white hover:bg-neutral-200 text-black font-bold py-4 rounded-xl transition-colors flex items-center justify-center gap-3"
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-colors"
           >
-            {isValidating ? (
-              <div className="w-6 h-6 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-            ) : (
-              <>
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Sign in with Google
-              </>
-            )}
+            Access Dashboard
           </button>
-        </div>
+        </form>
       </div>
     );
   }
@@ -145,27 +125,15 @@ export default function AdminDashboard() {
       <div className="max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-3xl font-bold">Event Dashboard</h1>
-            <p className="text-neutral-400">Manage live pitching competition</p>
+            <h1 className="text-3xl font-bold">Admin Panel</h1>
+            <p className="text-neutral-400">Manage competition and attendees</p>
           </div>
           <div className="flex items-center gap-4">
-            {eventLoading || teamsLoading ? (
-              <span className="text-neutral-500">Connecting...</span>
-            ) : (
-              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                </span>
-                <span className="text-sm font-medium">Live Connected</span>
-              </div>
-            )}
-            
             <button 
               onClick={handleLogout}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
             >
-              <LogOut className="w-4 h-4" /> Sign Out
+              <LogOut className="w-4 h-4" /> Log Out
             </button>
             <button 
               onClick={handleReset}
@@ -175,8 +143,6 @@ export default function AdminDashboard() {
             </button>
           </div>
         </header>
-
-
 
         {(!eventLoading && !teamsLoading && activeTeam) ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -190,17 +156,17 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center py-10">
-              <h3 className="text-5xl font-black mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-400">
+              <h3 className="text-5xl font-black mb-2 text-center">
                 {activeTeam.name}
               </h3>
-              <p className="text-xl text-neutral-500 mb-12">Now on stage</p>
+              <p className="text-xl text-neutral-500 mb-12 uppercase tracking-widest">Now on stage</p>
 
               <div className="flex gap-4">
                 <button
                   onClick={toggleVoting}
                   className={`flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all ${
                     votingOpen 
-                      ? "bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/30" 
+                      ? "bg-red-500/20 text-red-500 border border-red-500/50" 
                       : "bg-green-500 text-black hover:bg-green-400"
                   }`}
                 >
@@ -211,98 +177,81 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex justify-between mt-auto pt-6 border-t border-white/10">
-              <button 
-                onClick={prevTeam}
-                disabled={activeTeamIndex === 0}
-                className="flex items-center gap-2 px-4 py-2 text-neutral-400 hover:text-white disabled:opacity-50 disabled:hover:text-neutral-400 transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" /> Previous Team
-              </button>
-              <button 
-                onClick={nextTeam}
-                disabled={activeTeamIndex === teams.length - 1}
-                className="flex items-center gap-2 px-4 py-2 text-neutral-400 hover:text-white disabled:opacity-50 disabled:hover:text-neutral-400 transition-colors"
-              >
-                Next Team <ChevronRight className="w-5 h-5" />
-              </button>
+              <button onClick={prevTeam} disabled={activeTeamIndex === 0} className="flex items-center gap-2 text-neutral-400 disabled:opacity-30"><ChevronLeft /> Prev</button>
+              <button onClick={nextTeam} disabled={activeTeamIndex === teams.length - 1} className="flex items-center gap-2 text-neutral-400 disabled:opacity-30">Next <ChevronRight /></button>
             </div>
           </div>
 
-          {/* Sidebar Stats */}
+          {/* Sidebar */}
           <div className="flex flex-col gap-6">
             <div className="glass-panel p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Activity className="w-5 h-5 text-blue-400" />
                 <h3 className="text-lg font-semibold">Live Stats</h3>
               </div>
-              
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <p className="text-neutral-500 text-sm mb-1">Status</p>
-                  <p className={`font-bold text-lg ${votingOpen ? "text-green-400" : "text-neutral-300"}`}>
-                    {votingOpen ? "Accepting Votes..." : "Voting Closed"}
-                  </p>
+                  <p className="text-neutral-500 text-sm">Status</p>
+                  <p className="font-bold">{votingOpen ? "VOTING OPEN" : "VOTING CLOSED"}</p>
                 </div>
-                
-                <div className="flex justify-between items-end border-b border-white/10 pb-4">
+                <div className="flex justify-between">
                   <div>
-                    <p className="text-neutral-500 text-sm mb-1">Votes Received</p>
-                    <p className="font-bold text-3xl">{activeTeam.totalVotes || 0}</p>
+                    <p className="text-neutral-500 text-sm">Votes</p>
+                    <p className="text-2xl font-bold">{activeTeam.totalVotes || 0}</p>
                   </div>
-                  <div className="text-sm text-green-400 flex items-center gap-1">
-                    <motion.div 
-                      animate={{ scale: [1, 1.2, 1] }} 
-                      transition={{ repeat: Infinity, duration: 2 }}
-                      className="w-2 h-2 bg-green-400 rounded-full" 
-                    />
-                    Live
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-neutral-500 text-sm mb-1">Total Score</p>
-                    <p className="font-bold text-3xl text-yellow-400">
-                      {activeTeam.totalScore || 0}
-                    </p>
+                    <p className="text-neutral-500 text-sm">Score</p>
+                    <p className="text-2xl font-bold text-yellow-500">{activeTeam.totalScore || 0}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="glass-panel p-6 flex-1 flex flex-col">
+            <div className="glass-panel p-6 flex-1">
               <div className="flex items-center gap-3 mb-4">
                 <Users className="w-5 h-5 text-purple-400" />
-                <h3 className="text-lg font-semibold">Teams Management</h3>
+                <h3 className="text-lg font-semibold">Attendee IDs</h3>
               </div>
-              <div className="flex-1 overflow-y-auto mb-4 max-h-[150px] pr-2 space-y-2">
-                {teams.map((t, i) => (
-                  <div key={t.id} className="flex justify-between items-center text-sm p-2 bg-white/5 rounded-lg">
-                    <span>{i + 1}. {t.name}</span>
-                    <span className="text-neutral-500">{t.totalVotes} votes</span>
-                  </div>
-                ))}
-              </div>
-              <form onSubmit={handleAddTeam} className="mt-auto pt-4 border-t border-white/10 flex gap-2">
+              <form onSubmit={handleGenerate} className="mb-4 flex gap-2">
                 <input
-                  type="text"
-                  value={newTeamName}
-                  onChange={(e) => setNewTeamName(e.target.value)}
-                  placeholder="New team name..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                  type="number"
+                  value={generateCount}
+                  onChange={(e) => setGenerateCount(Number(e.target.value))}
+                  className="w-20 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-sm"
                 />
-                <button
-                  type="submit"
-                  disabled={isAddingTeam || !newTeamName.trim()}
-                  className="bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-700 text-white p-2 rounded-lg transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
+                <button type="submit" disabled={isGenerating} className="bg-blue-600 px-3 py-1 rounded-lg text-sm flex-1">
+                  {isGenerating ? "..." : "Generate IDs"}
                 </button>
               </form>
+              <div className="max-h-[200px] overflow-y-auto space-y-1 font-mono text-xs">
+                {attendees.map(a => (
+                  <div key={a.id} className="p-1 bg-white/5 rounded px-2">{a.id}</div>
+                ))}
+              </div>
             </div>
           </div>
           
-
+          <div className="lg:col-span-3 glass-panel p-6">
+            <h3 className="text-lg font-semibold mb-4">Manage Teams</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {teams.map(t => (
+                <div key={t.id} className="p-4 bg-white/5 rounded-xl border border-white/10">
+                  <p className="font-bold">{t.name}</p>
+                  <p className="text-xs text-neutral-500">Order: {t.order}</p>
+                </div>
+              ))}
+            </div>
+            <form onSubmit={handleAddTeam} className="flex gap-2">
+              <input
+                type="text"
+                value={newTeamName}
+                onChange={(e) => setNewTeamName(e.target.value)}
+                placeholder="Team Name"
+                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
+              />
+              <button type="submit" disabled={isAddingTeam} className="bg-blue-600 px-6 py-2 rounded-lg font-bold">Add Team</button>
+            </form>
+          </div>
         </div>
         ) : (
           <div className="flex items-center justify-center p-20">
