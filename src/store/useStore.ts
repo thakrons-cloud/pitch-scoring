@@ -1,15 +1,29 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-interface AppState {
+interface StoreState {
   sessionId: string | null;
-  deviceHash: string | null;
+  ticketCode: string | null;
+  votedTeamIds: string[];
   setSessionId: (id: string) => void;
-  setDeviceHash: (hash: string) => void;
+  setTicketCode: (code: string) => void;
+  addVotedTeamId: (teamId: string) => void;
 }
 
-export const useStore = create<AppState>((set) => ({
-  sessionId: null,
-  deviceHash: null,
-  setSessionId: (id) => set({ sessionId: id }),
-  setDeviceHash: (hash) => set({ deviceHash: hash }),
-}));
+export const useStore = create<StoreState>()(
+  persist(
+    (set) => ({
+      sessionId: null,
+      ticketCode: null,
+      votedTeamIds: [],
+      setSessionId: (id) => set({ sessionId: id }),
+      setTicketCode: (code) => set({ ticketCode: code }),
+      addVotedTeamId: (teamId) => set((state) => ({ 
+        votedTeamIds: [...state.votedTeamIds, teamId] 
+      })),
+    }),
+    {
+      name: "pitch-scoring-storage",
+    }
+  )
+);

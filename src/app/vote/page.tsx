@@ -5,15 +5,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Star, CheckCircle, Lock } from "lucide-react";
 import { useStore } from "@/store/useStore";
 import { useEventState, useTeams } from "@/hooks/useFirebaseData";
-import { submitVote } from "@/lib/firebaseUtils";
+import { submitVote, validateTicket } from "@/lib/firebaseUtils";
 import { v4 as uuidv4 } from "uuid";
+import { KeyRound } from "lucide-react";
 
 export default function VotePage() {
   const [rating, setRating] = useState<number | null>(null);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
-  const [hasVoted, setHasVoted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { sessionId, setSessionId } = useStore();
+  const [ticketInput, setTicketInput] = useState("");
+  const [ticketError, setTicketError] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+  
+  const { sessionId, setSessionId, ticketCode, setTicketCode, votedTeamIds, addVotedTeamId } = useStore();
   
   const { eventState, loading: eventLoading } = useEventState();
   const { teams, loading: teamsLoading } = useTeams();
@@ -28,19 +32,41 @@ export default function VotePage() {
     }
   }, [sessionId, setSessionId]);
 
+  const hasVoted = activeTeam ? votedTeamIds.includes(activeTeam.id) : false;
+
   // Handle vote submission
   const handleSubmit = async () => {
-    if (rating === null || !activeTeam || !sessionId) return;
+    if (rating === null || !activeTeam || !sessionId || !ticketCode) return;
     setIsSubmitting(true);
 
     try {
       await submitVote(activeTeam.id, sessionId, rating);
-      setHasVoted(true);
+      addVotedTeamId(activeTeam.id);
+      setRating(null); // Reset rating for next team
     } catch (err) {
       console.error("Error submitting vote:", err);
       alert("Failed to submit vote. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleTicketSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTicketError("");
+    
+    if (!ticketInput.trim() || !sessionId) return;
+    
+    setIsValidating(true);
+    try {
+      const isValid = await validateTicket(ticketInput.trim().toUpperCase(), sessionId);
+      if (isValid) {
+        setTicketCode(ticketInput.trim().toUpperCase());
+      }
+    } catch (err: any) {
+      setTicketError(err.message || "Invalid ticket code");
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -52,14 +78,68 @@ export default function VotePage() {
     );
   }
 
-  // If voting is closed
-  if (!eventState?.votingOpen) {
+  // If no ticket code is set
+  if (!ticketCode) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-black">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-black relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
+        
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center max-w-md w-full glass-panel p-10"
+        >
+          <div className="w-20 h-20 bg-blue-900/30 rounded-full flex items-center justify-center mb-6">
+            <KeyRound className="w-10 h-10 text-blue-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Enter Passcode</h2>
+          <p className="text-neutral-400 mb-8">
+            Please enter your unique 4-character ticket code to participate in the voting.
+          </p>
+
+          <form onSubmit={handleTicketSubmit} className="w-full flex flex-col gap-4">
+            <input
+              type="text"
+              value={ticketInput}
+              onChange={(e) => setTicketInput(e.target.value.toUpperCase())}
+              placeholder="e.g. A4X9"
+              maxLength={4}
+              className="w-full px-4 py-4 rounded-xl bg-white/5 border border-white/10 text-white text-center text-2xl tracking-[0.5em] placeholder:tracking-normal placeholder-neutral-600 focus:outline-none focus:border-blue-500 transition-colors uppercase font-mono"
+            />
+            {ticketError && (
+              <p className="text-red-400 text-sm text-center">{ticketError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={isValidating || ticketInput.length < 4}
+              className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white font-bold py-4 rounded-xl transition-colors flex items-center justify-center"
+            >
+              {isValidating ? (
+                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                "Verify Code"
+              )}
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // If voting is closed
+  if (!eventState?.votingOpen) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-black relative overflow-hidden">
+        <div className="absolute top-0 w-full h-[30vh] bg-gradient-to-b from-blue-900/20 to-transparent" />
+        <div className="absolute top-4 right-4 bg-white/10 px-3 py-1 rounded-full border border-white/10 text-xs font-mono text-neutral-400 flex items-center gap-2">
+          <KeyRound className="w-3 h-3" /> {ticketCode}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center max-w-md w-full glass-panel p-10 z-10"
         >
           <div className="w-20 h-20 bg-neutral-800 rounded-full flex items-center justify-center mb-6">
             <Lock className="w-10 h-10 text-neutral-400" />
@@ -77,6 +157,9 @@ export default function VotePage() {
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 w-full h-[30vh] bg-gradient-to-b from-blue-900/20 to-transparent" />
+      <div className="absolute top-4 right-4 bg-white/10 px-3 py-1 rounded-full border border-white/10 text-xs font-mono text-neutral-400 flex items-center gap-2 z-20">
+        <KeyRound className="w-3 h-3" /> {ticketCode}
+      </div>
       
       <div className="w-full max-w-md z-10 flex flex-col items-center">
         {/* Header / Team Info */}
@@ -165,7 +248,7 @@ export default function VotePage() {
               </motion.div>
               <h2 className="text-2xl font-bold text-white mb-2">Score Submitted!</h2>
               <p className="text-neutral-400">
-                You gave {activeTeam?.name} a score of <strong className="text-white text-xl">{rating}</strong>. <br />
+                You have successfully cast your vote for {activeTeam?.name}. <br />
                 Please wait for the next team.
               </p>
             </motion.div>

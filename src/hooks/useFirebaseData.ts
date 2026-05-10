@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot, collection, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { EventState, Team } from "@/lib/firebaseUtils";
+import { EventState, Team, Ticket } from "@/lib/firebaseUtils";
 
 export function useEventState() {
   const [eventState, setEventState] = useState<EventState | null>(null);
@@ -40,4 +40,22 @@ export function useTeams() {
   }, []);
 
   return { teams, loading };
+}
+
+export function useTickets() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, 'tickets'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const ticketsData = snapshot.docs.map(doc => doc.data() as Ticket);
+      setTickets(ticketsData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  return { tickets, loading };
 }

@@ -16,6 +16,13 @@ export interface Team {
   totalVotes: number;
 }
 
+export interface Ticket {
+  code: string;
+  used: boolean;
+  usedBySessionId: string | null;
+  createdAt: any;
+}
+
 // Ensure the basic structure exists in Firestore
 export const initializeEvent = async () => {
   const eventRef = doc(db, "eventState", "current");
@@ -113,7 +120,7 @@ export const resetEvent = async () => {
     });
   });
 
-  // Optional: Reset event state to the first team
+  // Reset event state to the first team
   const eventRef = doc(db, "eventState", "current");
   batch.update(eventRef, {
     votingOpen: false,
@@ -121,4 +128,64 @@ export const resetEvent = async () => {
   });
 
   await batch.commit();
+};
+
+// Generate random 4-char alphanumeric tickets
+export const generateTickets = async (count: number) => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed similar looking chars (I, 1, O, 0)
+  const batch = writeBatch(db);
+  const ticketsRef = collection(db, "tickets");
+
+  for (let i = 0; i < count; i++) {
+    let code = "";
+    for (let j = 0; j < 4; j++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const newDoc = doc(ticketsRef, code);
+    batch.set(newDoc, {
+      code,
+      used: false,
+      usedBySessionId: null,
+      createdAt: serverTimestamp()
+    });
+  }
+
+  await batch.commit();
+};
+
+export const validateTicket = async (code: string, sessionId: string): Promise<boolean> => {
+  const ticketRef = doc(db, "tickets", code.toUpperCase());
+  
+  try {
+    const result = await runTransaction(db, async (transaction) => {
+      const ticketSnap = await transaction.get(ticketRef);
+      if (!ticketSnap.exists()) {
+        throw new Error("Invalid ticket code");
+      }
+      
+      const data = ticketSnap.data() as Ticket;
+      
+      // If ticket is already used by this exact session, that's fine (re-validation)
+      if (data.used && data.usedBySessionId === sessionId) {
+        return true;
+      }
+      
+      // If ticket is used by someone else
+      if (data.used) {
+        throw new Error("Ticket code already used");
+      }
+
+      // Claim the ticket
+      transaction.update(ticketRef, {
+        used: true,
+        usedBySessionId: sessionId
+      });
+      
+      return true;
+    });
+    
+    return result;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
 };

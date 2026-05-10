@@ -3,17 +3,20 @@
 import { useEffect, useState } from "react";
 import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEventState, useTeams } from "@/hooks/useFirebaseData";
-import { initializeEvent, updateEventState, addTeam, resetEvent } from "@/lib/firebaseUtils";
+import { useEventState, useTeams, useTickets } from "@/hooks/useFirebaseData";
+import { initializeEvent, updateEventState, addTeam, resetEvent, generateTickets } from "@/lib/firebaseUtils";
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [newTeamName, setNewTeamName] = useState("");
   const [isAddingTeam, setIsAddingTeam] = useState(false);
+  const [isGeneratingTickets, setIsGeneratingTickets] = useState(false);
+  const [generateCount, setGenerateCount] = useState(50);
   
   const { eventState, loading: eventLoading } = useEventState();
   const { teams, loading: teamsLoading } = useTeams();
+  const { tickets, loading: ticketsLoading } = useTickets();
 
   // Handle DB init
   useEffect(() => {
@@ -77,6 +80,15 @@ export default function AdminDashboard() {
       await resetEvent();
       alert("Event has been reset.");
     }
+  };
+
+  const handleGenerateTickets = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (generateCount < 1 || generateCount > 200) return alert("Please enter a number between 1 and 200");
+    
+    setIsGeneratingTickets(true);
+    await generateTickets(generateCount);
+    setIsGeneratingTickets(false);
   };
 
   if (!isAuthenticated) {
@@ -254,6 +266,50 @@ export default function AdminDashboard() {
                   <Plus className="w-5 h-5" />
                 </button>
               </form>
+            </div>
+          </div>
+          
+          {/* Tickets Management Panel */}
+          <div className="mt-6 glass-panel p-6 md:p-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-neutral-300">Tickets Management</h2>
+                <p className="text-sm text-neutral-500">
+                  {tickets.length} total tickets / {tickets.filter(t => !t.used).length} unused
+                </p>
+              </div>
+              <form onSubmit={handleGenerateTickets} className="flex gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="200"
+                  value={generateCount}
+                  onChange={(e) => setGenerateCount(Number(e.target.value))}
+                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 w-24"
+                />
+                <button
+                  type="submit"
+                  disabled={isGeneratingTickets}
+                  className="bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-700 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium"
+                >
+                  {isGeneratingTickets ? "Generating..." : "Generate Tickets"}
+                </button>
+              </form>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-[300px] overflow-y-auto pr-2">
+              {tickets.map(ticket => (
+                <div 
+                  key={ticket.code} 
+                  className={`p-3 rounded-lg border text-center font-mono text-lg font-bold
+                    ${ticket.used 
+                      ? "bg-red-500/10 border-red-500/30 text-red-500/50" 
+                      : "bg-green-500/10 border-green-500/30 text-green-400"
+                    }`}
+                >
+                  {ticket.code}
+                </div>
+              ))}
             </div>
           </div>
         </div>
