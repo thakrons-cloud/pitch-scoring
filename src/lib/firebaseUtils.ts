@@ -116,6 +116,16 @@ export const addTeam = async (name: string, currentTeamCount: number) => {
   await setDoc(doc(db, "teams", newTeamId), newTeam);
 };
 
+export const updateTeamName = async (teamId: string, name: string) => {
+  const teamRef = doc(db, "teams", teamId);
+  await updateDoc(teamRef, { name });
+};
+
+export const deleteTeam = async (teamId: string) => {
+  const teamRef = doc(db, "teams", teamId);
+  await deleteDoc(teamRef);
+};
+
 export const resetEvent = async () => {
   const batch = writeBatch(db);
   

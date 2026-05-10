@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, LogOut, QrCode, Printer, Download, ExternalLink } from "lucide-react";
+import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, LogOut, QrCode, Printer, Download, ExternalLink, Edit2, Trash2, Check, X } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEventState, useTeams, useAttendees } from "@/hooks/useFirebaseData";
-import { initializeEvent, updateEventState, addTeam, resetEvent, generateAttendeeIds } from "@/lib/firebaseUtils";
+import { initializeEvent, updateEventState, addTeam, resetEvent, generateAttendeeIds, updateTeamName, deleteTeam } from "@/lib/firebaseUtils";
 import { useStore } from "@/store/useStore";
 
 export default function AdminDashboard() {
@@ -18,6 +18,9 @@ export default function AdminDashboard() {
   const [generateCount, setGenerateCount] = useState(50);
   const [showQR, setShowQR] = useState(false);
   const [origin, setOrigin] = useState("");
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [isUpdatingTeam, setIsUpdatingTeam] = useState(false);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -102,6 +105,31 @@ export default function AdminDashboard() {
     setIsGenerating(true);
     await generateAttendeeIds(generateCount);
     setIsGenerating(false);
+  };
+
+  const handleStartEdit = (teamId: string, currentName: string) => {
+    setEditingTeamId(teamId);
+    setEditingName(currentName);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTeamId(null);
+    setEditingName("");
+  };
+
+  const handleUpdateTeam = async (teamId: string) => {
+    if (!editingName.trim()) return;
+    setIsUpdatingTeam(true);
+    await updateTeamName(teamId, editingName.trim());
+    setEditingTeamId(null);
+    setIsUpdatingTeam(false);
+  };
+
+  const handleDeleteTeam = async (teamId: string, teamName: string) => {
+    const confirmDelete = window.confirm(`Are you sure you want to delete team "${teamName}"? This cannot be undone.`);
+    if (confirmDelete) {
+      await deleteTeam(teamId);
+    }
   };
 
   if (!isAdmin) {
@@ -287,11 +315,56 @@ export default function AdminDashboard() {
           
           <div className="lg:col-span-3 glass-panel p-6">
             <h3 className="text-lg font-semibold mb-4">Manage Teams</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               {teams.map(t => (
-                <div key={t.id} className="p-4 bg-white/5 rounded-xl border border-white/10">
-                  <p className="font-bold">{t.name}</p>
-                  <p className="text-xs text-neutral-500">Order: {t.order}</p>
+                <div key={t.id} className="p-4 bg-white/5 rounded-xl border border-white/10 group">
+                  {editingTeamId === t.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        className="flex-1 bg-black/40 border border-blue-500/50 rounded px-2 py-1 text-sm focus:outline-none"
+                        autoFocus
+                      />
+                      <button 
+                        onClick={() => handleUpdateTeam(t.id)}
+                        disabled={isUpdatingTeam}
+                        className="p-1 hover:bg-green-500/20 text-green-500 rounded"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={handleCancelEdit}
+                        className="p-1 hover:bg-red-500/20 text-red-500 rounded"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-bold">{t.name}</p>
+                        <p className="text-xs text-neutral-500">Order: {t.order}</p>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleStartEdit(t.id, t.name)}
+                          className="p-1.5 hover:bg-white/10 text-neutral-400 hover:text-white rounded"
+                          title="Edit Name"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteTeam(t.id, t.name)}
+                          className="p-1.5 hover:bg-red-500/10 text-neutral-500 hover:text-red-500 rounded"
+                          title="Delete Team"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
