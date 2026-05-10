@@ -26,7 +26,7 @@ export default function VotePage() {
   // Sync event reset
   useEffect(() => {
     if (eventState?.lastResetAt) {
-      const resetTime = eventState.lastResetAt.toMillis();
+      const resetTime = (eventState.lastResetAt as import("firebase/firestore").Timestamp).toMillis();
       if (lastResetTime !== null && resetTime > lastResetTime) {
         clearState();
       }
