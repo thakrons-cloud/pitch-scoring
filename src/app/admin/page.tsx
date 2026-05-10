@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, LogOut, Ticket } from "lucide-react";
+import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, LogOut, QrCode, Printer, Download, ExternalLink } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEventState, useTeams, useAttendees } from "@/hooks/useFirebaseData";
 import { initializeEvent, updateEventState, addTeam, resetEvent, generateAttendeeIds } from "@/lib/firebaseUtils";
@@ -14,6 +16,12 @@ export default function AdminDashboard() {
   const [isAddingTeam, setIsAddingTeam] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateCount, setGenerateCount] = useState(50);
+  const [showQR, setShowQR] = useState(false);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
   
   const { eventState, loading: eventLoading } = useEventState();
   const { teams, loading: teamsLoading } = useTeams();
@@ -130,6 +138,12 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <button 
+              onClick={() => setShowQR(!showQR)}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
+            >
+              <QrCode className="w-4 h-4" /> {showQR ? "Hide QR" : "Show QR Code"}
+            </button>
+            <button 
               onClick={handleLogout}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
             >
@@ -143,6 +157,38 @@ export default function AdminDashboard() {
             </button>
           </div>
         </header>
+
+        {showQR && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 glass-panel p-8 flex flex-col md:flex-row items-center justify-between gap-8 bg-blue-600/5 border-blue-500/20"
+          >
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold mb-2">Join Event</h2>
+              <p className="text-neutral-400 mb-6 max-w-md">
+                Attendees can scan this QR code to join the voting system. They will need an Attendee ID to participate.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <div className="px-4 py-2 bg-black/40 border border-white/10 rounded-lg font-mono text-sm flex items-center gap-3">
+                  <span className="text-neutral-500">{origin}/vote</span>
+                  <a href={`${origin}/vote`} target="_blank" className="text-blue-400 hover:text-blue-300">
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 bg-white rounded-2xl shadow-[0_0_50px_rgba(37,99,235,0.2)]">
+              <QRCodeCanvas 
+                id="event-qr"
+                value={`${origin}/vote`} 
+                size={180}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+          </motion.div>
+        )}
 
         {(!eventLoading && !teamsLoading && activeTeam) ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -208,9 +254,17 @@ export default function AdminDashboard() {
             </div>
 
             <div className="glass-panel p-6 flex-1">
-              <div className="flex items-center gap-3 mb-4">
-                <Users className="w-5 h-5 text-purple-400" />
-                <h3 className="text-lg font-semibold">Attendee IDs</h3>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Users className="w-5 h-5 text-purple-400" />
+                  <h3 className="text-lg font-semibold">Attendee IDs</h3>
+                </div>
+                <Link
+                  href="/admin/print"
+                  className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded flex items-center gap-1 transition-colors"
+                >
+                  <Printer className="w-3 h-3" /> Print
+                </Link>
               </div>
               <form onSubmit={handleGenerate} className="mb-4 flex gap-2">
                 <input
