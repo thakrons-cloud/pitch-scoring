@@ -6,6 +6,8 @@ export interface EventState {
   votingOpen: boolean;
   currentRound: number;
   eventName: string;
+  timerDuration: number; // in seconds
+  timerStartedAt: Timestamp | null;
   lastResetAt?: Timestamp;
 }
 
@@ -34,6 +36,8 @@ export const initializeEvent = async () => {
       votingOpen: false,
       currentRound: 1,
       eventName: "Pitching Competition 2026",
+      timerDuration: 180, // Default 3 minutes
+      timerStartedAt: null,
       lastResetAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });

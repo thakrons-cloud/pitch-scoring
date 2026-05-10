@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Trophy } from "lucide-react";
+import { Trophy, Clock } from "lucide-react";
 import { useTeams, useEventState } from "@/hooks/useFirebaseData";
 
 export default function LeaderboardPage() {
@@ -19,6 +19,37 @@ export default function LeaderboardPage() {
     }
     return scoreB - scoreA;
   });
+
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!eventState?.timerStartedAt || !eventState?.timerDuration) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const startedAt = eventState.timerStartedAt!.toMillis();
+      const durationMs = eventState.timerDuration * 1000;
+      const diff = now - startedAt;
+      const remaining = Math.max(0, Math.floor((durationMs - diff) / 1000));
+      
+      setTimeLeft(remaining);
+      
+      if (remaining === 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [eventState?.timerStartedAt, eventState?.timerDuration]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   if (loading) {
     return (
@@ -60,6 +91,27 @@ export default function LeaderboardPage() {
             {eventState?.eventName || "Pitching Competition 2026"}
           </motion.p>
         </header>
+
+        {/* Timer Section */}
+        {timeLeft !== null && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-12 flex flex-col items-center"
+          >
+            <div className={`
+              glass-panel px-12 py-8 flex flex-col items-center border-2 transition-colors duration-500
+              ${timeLeft <= 10 && timeLeft > 0 ? "border-red-500/50 bg-red-500/5 shadow-[0_0_50px_rgba(239,68,68,0.2)]" : "border-blue-500/30"}
+            `}>
+              <div className="flex items-center gap-2 text-neutral-500 uppercase tracking-widest text-sm mb-2 font-bold">
+                <Clock className="w-4 h-4" /> Time Remaining
+              </div>
+              <div className={`text-8xl md:text-9xl font-mono font-black tracking-tighter ${timeLeft <= 10 ? "text-red-500 animate-pulse" : "text-white"}`}>
+                {formatTime(timeLeft)}
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <div className="space-y-6">
           {sortedTeams.map((team, index) => (

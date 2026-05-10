@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, LogOut, QrCode, Printer, Download, ExternalLink, Edit2, Trash2, Check, X } from "lucide-react";
+import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, LogOut, QrCode, Printer, Download, ExternalLink, Edit2, Trash2, Check, X, Clock, RotateCcw } from "lucide-react";
+import { serverTimestamp } from "firebase/firestore";
 import { QRCodeCanvas } from "qrcode.react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -24,6 +25,8 @@ export default function AdminDashboard() {
   const [isEditingEventName, setIsEditingEventName] = useState(false);
   const [tempEventName, setTempEventName] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [timerMinutes, setTimerMinutes] = useState(3);
+  const [timerSeconds, setTimerSeconds] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -148,6 +151,25 @@ export default function AdminDashboard() {
     if (!tempEventName.trim()) return;
     await updateEventState({ eventName: tempEventName.trim() });
     setIsEditingEventName(false);
+  };
+
+  const handleStartTimer = async () => {
+    const totalSeconds = (timerMinutes * 60) + timerSeconds;
+    await updateEventState({ 
+      timerDuration: totalSeconds,
+      timerStartedAt: serverTimestamp()
+    });
+  };
+
+  const handleStopTimer = async () => {
+    await updateEventState({ 
+      timerStartedAt: null 
+    });
+  };
+
+  const handleSetTimerTemplate = (mins: number) => {
+    setTimerMinutes(mins);
+    setTimerSeconds(0);
   };
 
   if (!mounted) {
@@ -310,6 +332,75 @@ export default function AdminDashboard() {
                   {votingOpen ? <Square className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
                   {votingOpen ? "Close Voting" : "Open Voting"}
                 </button>
+              </div>
+            </div>
+
+            {/* Timer Management */}
+            <div className="mt-8 p-6 bg-white/5 border border-white/10 rounded-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-400" />
+                  <h3 className="font-semibold text-lg">Pitch Timer</h3>
+                </div>
+                {eventState?.timerStartedAt && (
+                  <span className="flex items-center gap-1.5 text-xs text-green-400 font-bold px-2 py-1 bg-green-500/10 rounded-full animate-pulse">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full" /> LIVE ON LEADERBOARD
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex flex-col md:flex-row items-end gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-neutral-500 uppercase font-bold px-1">Mins</label>
+                    <input 
+                      type="number" 
+                      value={timerMinutes}
+                      onChange={(e) => setTimerMinutes(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-20 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-xl font-bold focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  <span className="text-2xl font-bold text-neutral-600">:</span>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-neutral-500 uppercase font-bold px-1">Secs</label>
+                    <input 
+                      type="number" 
+                      value={timerSeconds}
+                      onChange={(e) => setTimerSeconds(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
+                      className="w-20 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-xl font-bold focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 flex-1">
+                  {[1, 3, 5, 10].map(m => (
+                    <button 
+                      key={m} 
+                      onClick={() => handleSetTimerTemplate(m)}
+                      className="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-xs font-semibold transition-colors"
+                    >
+                      {m}m
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 w-full md:w-auto">
+                  {eventState?.timerStartedAt ? (
+                    <button 
+                      onClick={handleStopTimer}
+                      className="flex-1 md:flex-none px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" /> Reset Timer
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={handleStartTimer}
+                      className="flex-1 md:flex-none px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Play className="w-4 h-4 fill-current" /> Start Timer
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
