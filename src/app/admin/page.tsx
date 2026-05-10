@@ -41,7 +41,7 @@ export default function AdminDashboard() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real app, this would be verified against an API/env var securely
-    if (password === "supersecretpassword123" || password === "admin") {
+    if (password === "pitch-admin" || password === "admin") {
       setIsAuthenticated(true);
     } else {
       alert("Invalid password");
