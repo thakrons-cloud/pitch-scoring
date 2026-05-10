@@ -1,15 +1,14 @@
 "use client";
 
-import { useTickets } from "@/hooks/useFirebaseData";
+import { useAttendees } from "@/hooks/useFirebaseData";
 import { Printer, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function PrintTicketsPage() {
-  const { tickets, loading } = useTickets();
-  const unusedTickets = tickets.filter(t => !t.used);
+export default function PrintAttendeesPage() {
+  const { attendees, loading } = useAttendees();
 
   if (loading) {
-    return <div className="p-10 text-center">Loading tickets...</div>;
+    return <div className="p-10 text-center">Loading IDs...</div>;
   }
 
   return (
@@ -24,7 +23,7 @@ export default function PrintTicketsPage() {
         </Link>
         <div className="flex items-center gap-6">
           <p className="text-sm font-medium">
-            <span className="text-blue-600 font-bold">{unusedTickets.length}</span> unused tickets ready to print
+            <span className="text-blue-600 font-bold">{attendees.length}</span> Attendee IDs ready to print
           </p>
           <button
             onClick={() => window.print()}
@@ -37,22 +36,22 @@ export default function PrintTicketsPage() {
 
       {/* Printable Grid */}
       <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-0 border-t border-l border-black">
-        {unusedTickets.map((ticket) => (
+        {attendees.map((attendee) => (
           <div 
-            key={ticket.code} 
+            key={attendee.id} 
             className="aspect-square border-r border-b border-black flex flex-col items-center justify-center p-4 text-center"
           >
-            <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-1">Passcode</p>
-            <h3 className="text-2xl font-mono font-black tracking-wider">{ticket.code}</h3>
+            <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-1">Attendee ID</p>
+            <h3 className="text-2xl font-mono font-black tracking-wider">{attendee.id}</h3>
             <p className="text-[8px] mt-2 text-neutral-300">pitch-scoring-2026</p>
           </div>
         ))}
       </div>
 
-      {unusedTickets.length === 0 && (
+      {attendees.length === 0 && (
         <div className="text-center py-20">
-          <h2 className="text-2xl font-bold text-neutral-400">No unused tickets found.</h2>
-          <p className="text-neutral-500">Generate more tickets in the admin dashboard first.</p>
+          <h2 className="text-2xl font-bold text-neutral-400">No IDs found.</h2>
+          <p className="text-neutral-500">Generate IDs in the admin dashboard first.</p>
         </div>
       )}
 
