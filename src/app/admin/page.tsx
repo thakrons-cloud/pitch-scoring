@@ -21,6 +21,8 @@ export default function AdminDashboard() {
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isUpdatingTeam, setIsUpdatingTeam] = useState(false);
+  const [isEditingEventName, setIsEditingEventName] = useState(false);
+  const [tempEventName, setTempEventName] = useState("");
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -36,6 +38,12 @@ export default function AdminDashboard() {
       initializeEvent();
     }
   }, [isAdmin]);
+
+  useEffect(() => {
+    if (eventState?.eventName) {
+      setTempEventName(eventState.eventName);
+    }
+  }, [eventState?.eventName]);
 
   const activeTeamIndex = teams.findIndex(t => t.id === eventState?.activeTeamId);
   const activeTeam = activeTeamIndex >= 0 ? teams[activeTeamIndex] : null;
@@ -132,6 +140,12 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUpdateEventName = async () => {
+    if (!tempEventName.trim()) return;
+    await updateEventState({ eventName: tempEventName.trim() });
+    setIsEditingEventName(false);
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black p-6">
@@ -161,7 +175,33 @@ export default function AdminDashboard() {
       <div className="max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-3xl font-bold">Admin Panel</h1>
+            {isEditingEventName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={tempEventName}
+                  onChange={(e) => setTempEventName(e.target.value)}
+                  className="bg-white/5 border border-blue-500/50 rounded-lg px-3 py-1 text-2xl font-bold focus:outline-none"
+                  autoFocus
+                />
+                <button onClick={handleUpdateEventName} className="p-2 hover:bg-green-500/20 text-green-500 rounded-lg">
+                  <Check className="w-5 h-5" />
+                </button>
+                <button onClick={() => setIsEditingEventName(false)} className="p-2 hover:bg-red-500/20 text-red-500 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group">
+                <h1 className="text-3xl font-bold">{eventState?.eventName || "Admin Panel"}</h1>
+                <button 
+                  onClick={() => setIsEditingEventName(true)}
+                  className="p-1 opacity-0 group-hover:opacity-100 transition-opacity text-neutral-500 hover:text-white"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
             <p className="text-neutral-400">Manage competition and attendees</p>
           </div>
           <div className="flex items-center gap-4">

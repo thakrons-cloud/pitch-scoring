@@ -5,6 +5,7 @@ export interface EventState {
   activeTeamId: string;
   votingOpen: boolean;
   currentRound: number;
+  eventName: string;
   lastResetAt?: Timestamp;
 }
 
@@ -32,6 +33,7 @@ export const initializeEvent = async () => {
       activeTeamId: "t1",
       votingOpen: false,
       currentRound: 1,
+      eventName: "Pitching Competition 2026",
       lastResetAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });

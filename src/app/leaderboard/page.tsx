@@ -2,10 +2,13 @@
 
 import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
-import { useTeams } from "@/hooks/useFirebaseData";
+import { useTeams, useEventState } from "@/hooks/useFirebaseData";
 
 export default function LeaderboardPage() {
-  const { teams, loading } = useTeams();
+  const { teams, loading: teamsLoading } = useTeams();
+  const { eventState, loading: eventLoading } = useEventState();
+
+  const loading = teamsLoading || eventLoading;
 
   // Sort teams by total score (descending) and then by total votes (descending)
   const sortedTeams = [...teams].sort((a, b) => {
@@ -54,7 +57,7 @@ export default function LeaderboardPage() {
             transition={{ delay: 0.2 }}
             className="text-xl text-neutral-400"
           >
-            Pitching Competition 2026
+            {eventState?.eventName || "Pitching Competition 2026"}
           </motion.p>
         </header>
 
