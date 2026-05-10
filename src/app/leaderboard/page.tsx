@@ -31,7 +31,7 @@ export default function LeaderboardPage() {
 
     const interval = setInterval(() => {
       const now = Date.now();
-      const startedAt = eventState.timerStartedAt!.toMillis();
+      const startedAt = (eventState.timerStartedAt as import("firebase/firestore").Timestamp).toMillis();
       const durationMs = eventState.timerDuration * 1000;
       const diff = now - startedAt;
       const remaining = Math.max(0, Math.floor((durationMs - diff) / 1000));
