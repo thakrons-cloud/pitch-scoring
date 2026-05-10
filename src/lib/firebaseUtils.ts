@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { collection, doc, getDoc, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, runTransaction, Timestamp } from "firebase/firestore";
+import { collection, doc, getDoc, setDoc, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, runTransaction, Timestamp } from "firebase/firestore";
 
 export interface EventState {
   activeTeamId: string;

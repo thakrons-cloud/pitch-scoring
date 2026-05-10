@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, Printer, Copy } from "lucide-react";
+import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, Printer } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEventState, useTeams, useTickets } from "@/hooks/useFirebaseData";
 import { initializeEvent, updateEventState, addTeam, resetEvent, generateTickets } from "@/lib/firebaseUtils";
@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   
   const { eventState, loading: eventLoading } = useEventState();
   const { teams, loading: teamsLoading } = useTeams();
-  const { tickets, loading: ticketsLoading } = useTickets();
+  const { tickets, loading } = useTickets();
 
   // Handle DB init
   useEffect(() => {
