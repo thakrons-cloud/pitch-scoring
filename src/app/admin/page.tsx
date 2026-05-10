@@ -51,8 +51,8 @@ export default function AdminDashboard() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default admin password
-    if (passwordInput === "pitch-admin" || passwordInput === "admin123") {
+    // Admin password
+    if (passwordInput === "8nv") {
       setIsAdmin(true);
     } else {
       alert("Invalid admin password");
