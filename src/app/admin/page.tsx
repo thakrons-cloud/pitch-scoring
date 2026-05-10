@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEventState, useTeams } from "@/hooks/useFirebaseData";
-import { initializeEvent, updateEventState, addTeam } from "@/lib/firebaseUtils";
+import { initializeEvent, updateEventState, addTeam, resetEvent } from "@/lib/firebaseUtils";
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -69,6 +69,16 @@ export default function AdminDashboard() {
     setIsAddingTeam(false);
   };
 
+  const handleReset = async () => {
+    const confirmReset = window.confirm(
+      "Are you sure you want to RESET ALL SCORES to zero? This action cannot be undone."
+    );
+    if (confirmReset) {
+      await resetEvent();
+      alert("Event has been reset.");
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black p-6">
@@ -113,6 +123,13 @@ export default function AdminDashboard() {
                 <span className="text-sm font-medium">Live Connected</span>
               </div>
             )}
+            
+            <button 
+              onClick={handleReset}
+              className="px-4 py-2 bg-red-900/50 hover:bg-red-600 border border-red-500/50 text-white text-sm font-semibold rounded-lg transition-colors ml-4"
+            >
+              Reset Event
+            </button>
           </div>
         </header>
 

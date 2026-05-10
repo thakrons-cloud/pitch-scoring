@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc, increment, serverTimestamp, getDocs, runTransaction } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, increment, serverTimestamp, getDocs, runTransaction, writeBatch } from "firebase/firestore";
 
 export interface EventState {
   activeTeamId: string;
@@ -98,4 +98,27 @@ export const addTeam = async (name: string, currentTeamCount: number) => {
     totalVotes: 0,
   };
   await setDoc(doc(db, "teams", newTeamId), newTeam);
+};
+
+export const resetEvent = async () => {
+  const batch = writeBatch(db);
+  
+  // Reset all teams
+  const teamsSnap = await getDocs(collection(db, "teams"));
+  teamsSnap.forEach((teamDoc) => {
+    batch.update(teamDoc.ref, {
+      averageScore: 0,
+      totalScore: 0,
+      totalVotes: 0
+    });
+  });
+
+  // Optional: Reset event state to the first team
+  const eventRef = doc(db, "eventState", "current");
+  batch.update(eventRef, {
+    votingOpen: false,
+    updatedAt: serverTimestamp()
+  });
+
+  await batch.commit();
 };
