@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Trophy, Users } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { useTeams } from "@/hooks/useFirebaseData";
 
 export default function LeaderboardPage() {
@@ -80,12 +80,7 @@ export default function LeaderboardPage() {
               {/* Team Name */}
               <div className="flex-1">
                 <h2 className="text-2xl md:text-3xl font-bold mb-2">{team.name}</h2>
-                <div className="flex items-center gap-4 text-neutral-400 text-sm md:text-base">
-                  <div className="flex items-center gap-1.5">
-                    <Users className="w-4 h-4" />
-                    <span>{team.totalVotes} votes</span>
-                  </div>
-                </div>
+
               </div>
 
               {/* Score */}
