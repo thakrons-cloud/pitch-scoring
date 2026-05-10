@@ -1,5 +1,8 @@
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 import { collection, doc, getDoc, setDoc, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, runTransaction, Timestamp } from "firebase/firestore";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+
+export const ADMIN_EMAILS = ["thakronsuttipat@gmail.com"]; // Add authorized admin emails here
 
 export interface EventState {
   activeTeamId: string;
@@ -145,63 +148,25 @@ export const resetEvent = async () => {
   await batch.commit();
 };
 
-// Generate random 4-char alphanumeric tickets
-export const generateTickets = async (count: number) => {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed similar looking chars (I, 1, O, 0)
-  const batch = writeBatch(db);
-  const ticketsRef = collection(db, "tickets");
 
-  for (let i = 0; i < count; i++) {
-    let code = "";
-    for (let j = 0; j < 4; j++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    const newDoc = doc(ticketsRef, code);
-    batch.set(newDoc, {
-      code,
-      used: false,
-      usedBySessionId: null,
-      createdAt: serverTimestamp()
-    });
+
+// Authentication
+export const signInWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    return result.user;
+  } catch (error) {
+    console.error("Error signing in with Google:", error);
+    throw error;
   }
-
-  await batch.commit();
 };
 
-export const validateTicket = async (code: string, sessionId: string): Promise<boolean> => {
-  const ticketRef = doc(db, "tickets", code.toUpperCase());
-  
+export const signOutUser = async () => {
   try {
-    const result = await runTransaction(db, async (transaction) => {
-      const ticketSnap = await transaction.get(ticketRef);
-      if (!ticketSnap.exists()) {
-        throw new Error("Invalid ticket code");
-      }
-      
-      const data = ticketSnap.data() as Ticket;
-      
-      // If ticket is already used by this exact session, that's fine (re-validation)
-      if (data.used && data.usedBySessionId === sessionId) {
-        return true;
-      }
-      
-      // If ticket is used by someone else
-      if (data.used) {
-        throw new Error("Ticket code already used");
-      }
-
-      // Claim the ticket
-      transaction.update(ticketRef, {
-        used: true,
-        usedBySessionId: sessionId
-      });
-      
-      return true;
-    });
-    
-    return result;
+    await signOut(auth);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error claiming ticket";
-    throw new Error(message);
+    console.error("Error signing out:", error);
+    throw error;
   }
 };
