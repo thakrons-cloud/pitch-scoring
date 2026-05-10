@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, LogOut, QrCode, Printer, Download, ExternalLink, Edit2, Trash2, Check, X, Clock, RotateCcw } from "lucide-react";
+import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, LogOut, QrCode, Printer, ExternalLink, Edit2, Trash2, Check, X, Clock, RotateCcw } from "lucide-react";
 import { serverTimestamp } from "firebase/firestore";
 import { QRCodeCanvas } from "qrcode.react";
 import Link from "next/link";
@@ -35,7 +35,7 @@ export default function AdminDashboard() {
   
   const { eventState, loading: eventLoading } = useEventState();
   const { teams, loading: teamsLoading } = useTeams();
-  const { attendees, loading: attendeesLoading } = useAttendees();
+  const { attendees } = useAttendees();
 
   // Handle DB init
   useEffect(() => {

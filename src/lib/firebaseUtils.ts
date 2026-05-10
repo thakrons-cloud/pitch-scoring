@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { collection, doc, getDoc, setDoc, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, runTransaction, query, where, Timestamp, deleteDoc } from "firebase/firestore";
+import { collection, doc, getDoc, setDoc, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, runTransaction, query, where, Timestamp, deleteDoc, FieldValue } from "firebase/firestore";
 
 export interface EventState {
   activeTeamId: string;
@@ -7,8 +7,8 @@ export interface EventState {
   currentRound: number;
   eventName: string;
   timerDuration: number; // in seconds
-  timerStartedAt: Timestamp | null;
-  lastResetAt?: Timestamp;
+  timerStartedAt: any;
+  lastResetAt?: any;
 }
 
 export interface Team {

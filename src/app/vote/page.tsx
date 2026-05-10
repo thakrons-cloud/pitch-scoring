@@ -67,7 +67,7 @@ export default function VotePage() {
       } else {
         setLoginError("Invalid Attendee ID. Please check and try again.");
       }
-    } catch (err) {
+    } catch {
       setLoginError("An error occurred during validation.");
     } finally {
       setIsValidating(false);
