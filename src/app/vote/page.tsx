@@ -17,7 +17,7 @@ export default function VotePage() {
   const [ticketError, setTicketError] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   
-  const { sessionId, setSessionId, ticketCode, setTicketCode, votedTeamIds, addVotedTeamId } = useStore();
+  const { sessionId, setSessionId, ticketCode, setTicketCode, votedTeamIds, addVotedTeamId, lastResetTime, setLastResetTime, clearState } = useStore();
   
   const { eventState, loading: eventLoading } = useEventState();
   const { teams, loading: teamsLoading } = useTeams();
@@ -31,6 +31,17 @@ export default function VotePage() {
       setSessionId(uuidv4());
     }
   }, [sessionId, setSessionId]);
+
+  // Sync event reset
+  useEffect(() => {
+    if (eventState?.lastResetAt) {
+      const resetTime = eventState.lastResetAt.toMillis();
+      if (lastResetTime !== null && resetTime > lastResetTime) {
+        clearState();
+      }
+      setLastResetTime(resetTime);
+    }
+  }, [eventState?.lastResetAt, lastResetTime, clearState, setLastResetTime]);
 
   const hasVoted = activeTeam ? votedTeamIds.includes(activeTeam.id) : false;
 

@@ -5,6 +5,7 @@ export interface EventState {
   activeTeamId: string;
   votingOpen: boolean;
   currentRound: number;
+  lastResetAt?: Timestamp;
 }
 
 export interface Team {
@@ -33,6 +34,7 @@ export const initializeEvent = async () => {
       activeTeamId: "t1",
       votingOpen: false,
       currentRound: 1,
+      lastResetAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
 
@@ -136,6 +138,7 @@ export const resetEvent = async () => {
   const eventRef = doc(db, "eventState", "current");
   batch.update(eventRef, {
     votingOpen: false,
+    lastResetAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
 
