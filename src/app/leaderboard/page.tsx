@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Trophy, Clock } from "lucide-react";
 import { useTeams, useEventState } from "@/hooks/useFirebaseData";
