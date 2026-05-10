@@ -272,35 +272,41 @@ export default function AdminDashboard() {
           
           {/* Tickets Management Panel */}
           <div className="mt-6 glass-panel p-6 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-neutral-300">Tickets Management</h2>
-                <p className="text-sm text-neutral-500">
-                  {tickets.length} total tickets / {tickets.filter(t => !t.used).length} unused
-                </p>
-              </div>
-              <form onSubmit={handleGenerateTickets} className="flex gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max="200"
-                  value={generateCount}
-                  onChange={(e) => setGenerateCount(Number(e.target.value))}
-                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 w-24"
-                />
-                <button
-                  type="submit"
-                  disabled={isGeneratingTickets}
-                  className="bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-700 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium"
-                >
-                  {isGeneratingTickets ? "Generating..." : "Generate Tickets"}
-                </button>
+            <div className="flex flex-col gap-6 mb-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-neutral-300">Tickets Management</h2>
+                  <p className="text-sm text-neutral-500">
+                    {tickets.length} total tickets / {tickets.filter(t => !t.used).length} unused
+                  </p>
+                </div>
                 <Link
                   href="/admin/print"
-                  className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium flex items-center gap-2"
+                  className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium flex items-center gap-2 border border-white/10"
                 >
                   <Printer className="w-4 h-4" /> Print View
                 </Link>
+              </div>
+
+              <form onSubmit={handleGenerateTickets} className="flex flex-wrap items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/5">
+                <p className="text-sm text-neutral-400 font-medium">Generate more tickets:</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="200"
+                    value={generateCount}
+                    onChange={(e) => setGenerateCount(Number(e.target.value))}
+                    className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 w-24 text-center"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isGeneratingTickets}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-neutral-700 text-white px-6 py-2 rounded-lg text-sm transition-colors font-bold shadow-lg shadow-blue-900/20"
+                  >
+                    {isGeneratingTickets ? "Generating..." : "Generate Tickets"}
+                  </button>
+                </div>
               </form>
             </div>
             
