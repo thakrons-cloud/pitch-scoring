@@ -88,11 +88,10 @@ export default function LeaderboardPage() {
 
               {/* Score */}
               <div className="text-right">
-                <div className="flex items-baseline gap-1 justify-end">
-                  <span className="text-4xl md:text-5xl font-black text-yellow-400">
+                <div className="flex items-baseline justify-end min-w-[100px]">
+                  <span className="text-4xl font-bold text-yellow-500">
                     {team.averageScore.toFixed(2)}
                   </span>
-                  <span className="text-xl text-neutral-500">/5</span>
                 </div>
               </div>
 

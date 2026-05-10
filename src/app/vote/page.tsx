@@ -9,8 +9,8 @@ import { submitVote } from "@/lib/firebaseUtils";
 import { v4 as uuidv4 } from "uuid";
 
 export default function VotePage() {
-  const [rating, setRating] = useState<number>(0);
-  const [hoveredRating, setHoveredRating] = useState<number>(0);
+  const [rating, setRating] = useState<number | null>(null);
+  const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { sessionId, setSessionId } = useStore();
@@ -30,7 +30,7 @@ export default function VotePage() {
 
   // Handle vote submission
   const handleSubmit = async () => {
-    if (rating === 0 || !activeTeam || !sessionId) return;
+    if (rating === null || !activeTeam || !sessionId) return;
     setIsSubmitting(true);
 
     try {
@@ -91,7 +91,7 @@ export default function VotePage() {
           <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
             {activeTeam?.name}
           </h1>
-          <p className="text-neutral-400">Rate this pitch from 1 to 5 stars</p>
+          <p className="text-neutral-400">Rate this pitch from 0 to 5</p>
         </motion.div>
 
         {/* Voting Card */}
@@ -105,8 +105,8 @@ export default function VotePage() {
               className="w-full glass-panel p-8 flex flex-col items-center"
             >
               {/* Number Score Buttons */}
-              <div className="flex justify-center gap-3 sm:gap-4 mb-10 w-full" onMouseLeave={() => setHoveredRating(0)}>
-                {[1, 2, 3, 4, 5].map((num) => (
+              <div className="flex justify-center gap-2 sm:gap-3 mb-10 w-full" onMouseLeave={() => setHoveredRating(null)}>
+                {[0, 1, 2, 3, 4, 5].map((num) => (
                   <motion.button
                     key={num}
                     whileHover={{ scale: 1.05 }}
@@ -129,9 +129,9 @@ export default function VotePage() {
               {/* Submit Button */}
               <button
                 onClick={handleSubmit}
-                disabled={rating === 0 || isSubmitting}
+                disabled={rating === null || isSubmitting}
                 className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2
-                  ${rating > 0 
+                  ${rating !== null 
                     ? "bg-white text-black hover:bg-neutral-200 active:scale-95" 
                     : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
                   }
