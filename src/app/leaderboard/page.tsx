@@ -7,12 +7,14 @@ import { useTeams } from "@/hooks/useFirebaseData";
 export default function LeaderboardPage() {
   const { teams, loading } = useTeams();
 
-  // Sort teams by average score (descending) and then by total votes (descending)
+  // Sort teams by total score (descending) and then by total votes (descending)
   const sortedTeams = [...teams].sort((a, b) => {
-    if (b.averageScore === a.averageScore) {
-      return b.totalVotes - a.totalVotes;
+    const scoreA = a.totalScore || 0;
+    const scoreB = b.totalScore || 0;
+    if (scoreB === scoreA) {
+      return (b.totalVotes || 0) - (a.totalVotes || 0);
     }
-    return b.averageScore - a.averageScore;
+    return scoreB - scoreA;
   });
 
   if (loading) {
@@ -90,7 +92,7 @@ export default function LeaderboardPage() {
               <div className="text-right">
                 <div className="flex items-baseline justify-end min-w-[100px]">
                   <span className="text-4xl font-bold text-yellow-500">
-                    {team.averageScore.toFixed(2)}
+                    {team.totalScore || 0}
                   </span>
                 </div>
               </div>

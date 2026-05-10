@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { doc, getDoc, setDoc, updateDoc, collection, addDoc, increment, serverTimestamp, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, increment, serverTimestamp, getDocs, runTransaction } from "firebase/firestore";
 
 export interface EventState {
   activeTeamId: string;
@@ -12,6 +12,7 @@ export interface Team {
   name: string;
   order: number;
   averageScore: number;
+  totalScore: number;
   totalVotes: number;
 }
 
@@ -59,19 +60,23 @@ export const submitVote = async (teamId: string, sessionId: string, score: numbe
 
   // Update team aggregates
   const teamRef = doc(db, "teams", teamId);
-  const teamSnap = await getDoc(teamRef);
   
-  if (teamSnap.exists()) {
-    const teamData = teamSnap.data() as Team;
-    const newTotalVotes = teamData.totalVotes + 1;
-    const currentTotalScore = teamData.averageScore * teamData.totalVotes;
-    const newAverageScore = (currentTotalScore + score) / newTotalVotes;
+  await runTransaction(db, async (transaction) => {
+    const teamSnap = await transaction.get(teamRef);
+    
+    if (teamSnap.exists()) {
+      const teamData = teamSnap.data() as Team;
+      const newTotalVotes = (teamData.totalVotes || 0) + 1;
+      const newTotalScore = (teamData.totalScore || 0) + score;
+      const newAverageScore = newTotalScore / newTotalVotes;
 
-    await updateDoc(teamRef, {
-      totalVotes: increment(1),
-      averageScore: newAverageScore
-    });
-  }
+      transaction.update(teamRef, {
+        totalVotes: newTotalVotes,
+        totalScore: newTotalScore,
+        averageScore: newAverageScore,
+      });
+    }
+  });
 };
 
 export const updateEventState = async (updates: Partial<EventState>) => {
@@ -89,6 +94,7 @@ export const addTeam = async (name: string, currentTeamCount: number) => {
     name,
     order: currentTeamCount + 1,
     averageScore: 0,
+    totalScore: 0,
     totalVotes: 0,
   };
   await setDoc(doc(db, "teams", newTeamId), newTeam);

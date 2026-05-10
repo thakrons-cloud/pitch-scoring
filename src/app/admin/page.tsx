@@ -199,12 +199,11 @@ export default function AdminDashboard() {
 
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-neutral-500 text-sm mb-1">Avg Score</p>
+                    <p className="text-neutral-500 text-sm mb-1">Total Score</p>
                     <p className="font-bold text-3xl text-yellow-400">
-                      {activeTeam.averageScore ? activeTeam.averageScore.toFixed(2) : "0.00"}
+                      {activeTeam.totalScore || 0}
                     </p>
                   </div>
-                  <div className="text-sm text-neutral-500">/ 5.00</div>
                 </div>
               </div>
             </div>
