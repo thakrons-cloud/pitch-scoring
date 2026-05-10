@@ -47,7 +47,7 @@ export const initializeEvent = async () => {
 };
 
 export const submitVote = async (teamId: string, sessionId: string, score: number) => {
-  if (score < 1 || score > 5) throw new Error("Invalid score");
+  if (score < 0 || score > 5) throw new Error("Invalid score");
 
   // Record the vote
   await addDoc(collection(db, "votes"), {
