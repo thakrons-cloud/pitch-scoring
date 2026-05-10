@@ -7,8 +7,8 @@ export interface EventState {
   currentRound: number;
   eventName: string;
   timerDuration: number; // in seconds
-  timerStartedAt: any;
-  lastResetAt?: any;
+  timerStartedAt: Timestamp | FieldValue | null;
+  lastResetAt?: Timestamp | FieldValue;
 }
 
 export interface Team {
