@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus } from "lucide-react";
+import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, Plus, Printer, Copy } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEventState, useTeams, useTickets } from "@/hooks/useFirebaseData";
 import { initializeEvent, updateEventState, addTeam, resetEvent, generateTickets } from "@/lib/firebaseUtils";
+import Link from "next/link";
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -294,18 +295,25 @@ export default function AdminDashboard() {
                 >
                   {isGeneratingTickets ? "Generating..." : "Generate Tickets"}
                 </button>
+                <Link
+                  href="/admin/print"
+                  className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm transition-colors font-medium flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4" /> Print View
+                </Link>
               </form>
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-[300px] overflow-y-auto pr-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-3 max-h-[400px] overflow-y-auto pr-2">
               {tickets.map(ticket => (
                 <div 
                   key={ticket.code} 
-                  className={`p-3 rounded-lg border text-center font-mono text-lg font-bold
+                  className={`p-2 rounded-lg border text-center font-mono text-sm font-bold truncate
                     ${ticket.used 
                       ? "bg-red-500/10 border-red-500/30 text-red-500/50" 
                       : "bg-green-500/10 border-green-500/30 text-green-400"
                     }`}
+                  title={ticket.code}
                 >
                   {ticket.code}
                 </div>
