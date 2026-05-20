@@ -310,13 +310,13 @@ export default function AdminDashboard() {
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xl font-semibold text-neutral-300">Active Team Control</h2>
               <span className="text-sm px-3 py-1 bg-white/10 rounded-full">
-                Team {activeTeamIndex + 1} of {teams.length}
+                Team {activeTeam ? activeTeamIndex + 1 : 0} of {teams.length}
               </span>
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center py-10">
               <h3 className="text-5xl font-black mb-2 text-center">
-                {activeTeam.name}
+                {activeTeam ? activeTeam.name : "No active team"}
               </h3>
               <p className="text-xl text-neutral-500 mb-12 uppercase tracking-widest">Now on stage</p>
 
@@ -405,8 +405,8 @@ export default function AdminDashboard() {
             </div>
 
             <div className="flex justify-between mt-auto pt-6 border-t border-white/10">
-              <button onClick={prevTeam} disabled={activeTeamIndex === 0} className="flex items-center gap-2 text-neutral-400 disabled:opacity-30"><ChevronLeft /> Prev</button>
-              <button onClick={nextTeam} disabled={activeTeamIndex === teams.length - 1} className="flex items-center gap-2 text-neutral-400 disabled:opacity-30">Next <ChevronRight /></button>
+              <button onClick={prevTeam} disabled={!activeTeam || activeTeamIndex <= 0} className="flex items-center gap-2 text-neutral-400 disabled:opacity-30"><ChevronLeft /> Prev</button>
+              <button onClick={nextTeam} disabled={!activeTeam || activeTeamIndex >= teams.length - 1} className="flex items-center gap-2 text-neutral-400 disabled:opacity-30">Next <ChevronRight /></button>
             </div>
           </div>
 
@@ -425,11 +425,11 @@ export default function AdminDashboard() {
                 <div className="flex justify-between">
                   <div>
                     <p className="text-neutral-500 text-sm">Votes</p>
-                    <p className="text-2xl font-bold">{activeTeam.totalVotes || 0}</p>
+                    <p className="text-2xl font-bold">{activeTeam?.totalVotes || 0}</p>
                   </div>
                   <div>
                     <p className="text-neutral-500 text-sm">Score</p>
-                    <p className="text-2xl font-bold text-yellow-500">{activeTeam.totalScore || 0}</p>
+                    <p className="text-2xl font-bold text-yellow-500">{activeTeam?.totalScore || 0}</p>
                   </div>
                 </div>
               </div>
