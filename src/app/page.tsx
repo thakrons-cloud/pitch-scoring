@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Trophy } from "lucide-react";
+import { ArrowRight, Trophy, Gamepad2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -69,8 +70,11 @@ export default function LandingPage() {
         </button>
       </motion.div>
       
-      <div className="absolute bottom-6 text-neutral-600 text-xs font-medium tracking-wider uppercase">
-        Live Audience System
+      <div className="absolute bottom-6 flex items-center gap-4 text-neutral-600 text-xs font-medium tracking-wider uppercase">
+        <span>Live Audience System</span>
+        <Link href="/game" className="flex items-center gap-1 hover:text-neutral-400 transition-colors">
+          <Gamepad2 className="w-3 h-3" /> Game Controller
+        </Link>
       </div>
     </div>
   );

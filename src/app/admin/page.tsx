@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, LogOut, QrCode, Printer, ExternalLink, Edit2, Trash2, Check, X, Clock, RotateCcw } from "lucide-react";
+import { Users, Activity, Play, Square, ChevronRight, ChevronLeft, Settings, LogOut, QrCode, Printer, ExternalLink, Edit2, Trash2, Check, X, Clock, RotateCcw, Gamepad2 } from "lucide-react";
 import { serverTimestamp } from "firebase/firestore";
 import { QRCodeCanvas } from "qrcode.react";
 import Link from "next/link";
@@ -250,7 +250,13 @@ export default function AdminDashboard() {
             <p className="text-neutral-400">Manage competition and attendees</p>
           </div>
           <div className="flex items-center gap-4">
-            <button 
+            <Link
+              href="/game"
+              className="px-4 py-2 bg-purple-900/50 hover:bg-purple-700/50 border border-purple-500/30 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Gamepad2 className="w-4 h-4" /> Game Controller
+            </Link>
+            <button
               onClick={() => setShowQR(!showQR)}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2"
             >
